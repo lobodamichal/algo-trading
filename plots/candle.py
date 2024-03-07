@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 
-def candle(df):
-    plt.figure()
-
+def candle(df, ax):
     df.reset_index(inplace=True)
+    dates_list = df['date'].tolist()
+
     df.set_index('date', inplace=True)
 
     width_candle = .6
@@ -16,7 +16,7 @@ def candle(df):
     color_down = 'red'
 
     # Bullish candle
-    plt.bar(
+    ax.bar(
             up_candle.index, 
             up_candle.close - up_candle.open, 
             width=width_candle, 
@@ -24,7 +24,7 @@ def candle(df):
             color=color_up
             )
     
-    plt.bar(
+    ax.bar(
             up_candle.index, 
             up_candle.high - up_candle.close, 
             width=width_knot, 
@@ -32,7 +32,7 @@ def candle(df):
             color=color_up
             )
     
-    plt.bar(
+    ax.bar(
             up_candle.index, 
             up_candle.low - up_candle.open, 
             width=width_knot, 
@@ -41,7 +41,7 @@ def candle(df):
             )
     
     # Bearish candle
-    plt.bar(
+    ax.bar(
             down_candle.index, 
             down_candle.close - down_candle.open, 
             width=width_candle, 
@@ -49,7 +49,7 @@ def candle(df):
             color=color_down
             )
     
-    plt.bar(
+    ax.bar(
             down_candle.index, 
             down_candle.high - down_candle.open, 
             width=width_knot, 
@@ -57,7 +57,7 @@ def candle(df):
             color=color_down
             )
     
-    plt.bar(
+    ax.bar(
             down_candle.index, 
             down_candle.low - down_candle.close, 
             width=width_knot, 
@@ -65,8 +65,8 @@ def candle(df):
             color=color_down
             )
     
-    plt.ylabel('price', color='black')
-    plt.xlabel('Date')
-    plt.xticks(rotation=45, ha='right')
-    plt.grid(True)
-    plt.show()
+    ax.set_ylabel('price', color='black')
+    ax.set_xlabel('Date')
+    ax.set_xticks(dates_list, [date.strftime('%d.%m') for date in dates_list], rotation=90, ha='center', fontsize=9)
+    ax.grid(True)
+    
