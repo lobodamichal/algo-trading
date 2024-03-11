@@ -66,7 +66,6 @@ def candle(df, ax):
             )
     
     ax.set_ylabel('price', color='black')
-    ax.set_xlabel('Date')
     ax.set_xticks(dates_list, [date.strftime('%d.%m') for date in dates_list], rotation=90, ha='center', fontsize=6)
     ax.grid(True)
     

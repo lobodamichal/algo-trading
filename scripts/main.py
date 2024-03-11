@@ -11,13 +11,18 @@ from plots import plot
 sp500_symbols = fetch_methods.sp500()
 sp500_historic_df = fetch_finan_data.historic_data("sp500", sp500_symbols, 180)
 
-sp500_historic_df = tech_indicators.GK_vol(sp500_historic_df)
-sp500_historic_df = tech_indicators.RSI(sp500_historic_df)
-sp500_historic_df = tech_indicators.B_bands(sp500_historic_df, normalized=False)
+aapl_data = sp500_historic_df.loc[pd.IndexSlice[:, 'AAPL'], :]
 
-msft_data = sp500_historic_df.loc[pd.IndexSlice[:, 'MSFT'], :]
-msft_data.reset_index(inplace=True)
+aapl_data = tech_indicators.GK_vol(aapl_data)
+aapl_data = tech_indicators.RSI(aapl_data)
+aapl_data = tech_indicators.B_bands(aapl_data)
+aapl_data = tech_indicators.ATR(aapl_data)
+aapl_data = tech_indicators.MACD(aapl_data)
 
-print(msft_data)
+aapl_data.reset_index(inplace=True)
 
-plot.plot(msft_data)
+print(aapl_data)
+
+plot.plot(aapl_data, label='AAPL')
+
+aapl_data.to_excel('../data/aapl.xlsx')
