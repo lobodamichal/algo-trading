@@ -44,6 +44,7 @@ class Index():
             
             stock_financial_data_df = self.financial_data.loc[(slice(None), ticker), :]
             stocks_dict[ticker] = Stock(ticker, stock_financial_data_df, stock_gics_dict[0])
+            stocks_dict[ticker].compute_indicators()
 
         return stocks_dict
     

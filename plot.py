@@ -97,11 +97,13 @@ class Plot():
 
     @staticmethod
     def volume(financial_data: pd.DataFrame, ax) -> None:
+        financial_data.reset_index(inplace=True)
         dates_list = financial_data['date'].tolist()
         financial_data.set_index('date', inplace=True)
         ax.bar(financial_data.index.get_level_values('date'), financial_data['volume'])
         ax.set_xticks(dates_list, [date.strftime('%d.%m') for date in dates_list], rotation=90, ha='center', fontsize=6)
-        
+        ax.set_ylabel('volume', color='black')
+
     @staticmethod
     def plot(stock: Stock, days: int) -> None:
         _, axs = plt.subplots(4, 1, gridspec_kw={'height_ratios': [3, 1, 1, 1]})
@@ -109,7 +111,6 @@ class Plot():
         axs[0].set_title(label=stock.ticker, loc='center')
 
         financial_data = stock.financial_data.iloc[-days:]
-        print(financial_data)
 
         Plot.candle(financial_data, axs[0])
         Plot.B_bands(financial_data, axs[0])
@@ -120,6 +121,6 @@ class Plot():
         Plot.technical_secondary(financial_data, 'ATR', 'red', axs[2], side='left')
         Plot.technical_secondary(financial_data, 'MACD', 'blue', axs[2], side='right')
 
-        #Plot.volume(financial_data, axs[3])
+        Plot.volume(financial_data, axs[3])
 
         plt.show()
