@@ -29,9 +29,15 @@ class Stock:
         self.financial_data = self.financial_data.copy()
         self.financial_data['ATR'] = ta.atr(high=self.financial_data['high'], low=self.financial_data['low'], close=self.financial_data['adj close'], length=length)
 
-    def MACD(self, length=14) -> None:
+    def MACD(self) -> None:
         self.financial_data = self.financial_data.copy()
-        self.financial_data['MACD'] = ta.macd(close=self.financial_data['adj close'],length=length).iloc[:,0]
+        #had error for signalma == NoneType
+        #self.financial_data['MACD'] = ta.macd(self.financial_data['adj close']).iloc[:,0]
+        
+        self.financial_data['EMA_fast'] = ta.ema(self.financial_data['adj close'], length=12)
+        self.financial_data['EMA_slow'] = ta.ema(self.financial_data['adj close'], length=26)
+        self.financial_data['MACD'] = self.financial_data['EMA_fast'] - self.financial_data['EMA_slow']
+        self.financial_data['MACD_signal'] = ta.ema(self.financial_data['MACD'], length=9)
 
     def compute_indicators(self) -> None:
         self.GK_vol()

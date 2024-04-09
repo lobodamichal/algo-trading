@@ -118,7 +118,8 @@ class Plot():
         Plot.technical_secondary(financial_data, 'GK_vol', 'red', axs[1])
         Plot.technical_secondary(financial_data, 'RSI', 'blue', axs[1], side='right')
 
-        Plot.technical_secondary(financial_data, 'ATR', 'red', axs[2], side='left')
+        #Plot.technical_secondary(financial_data, 'ATR', 'red', axs[2], side='left')
+        Plot.technical_secondary(financial_data, 'MACD_signal', 'red', axs[2], side='left')
         Plot.technical_secondary(financial_data, 'MACD', 'blue', axs[2], side='right')
 
         Plot.volume(financial_data, axs[3])
