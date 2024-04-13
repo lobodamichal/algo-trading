@@ -1,6 +1,5 @@
+from matplotlib.style import available
 import pandas as pd
-import yfinance as yf
-
 class Portfolio():
     def __init__(self, account: float, tickers: list):
         self.account = account
@@ -24,15 +23,26 @@ class Portfolio():
                 'sell_date'
             ])
         
-    def calculate_shares_to_buy(self, hist_data:pd.DataFrame):
+    def calculate_equal_weight(self, hist_data:pd.DataFrame):
         self.equal_weight = pd.DataFrame(columns=['ticker', 'price','shares_to_buy'])
         last_date = hist_data.index.levels[0][-1]
         last_date_data = hist_data.xs(last_date)
 
-        for ticker in self.tickers:
+        tickers_in_portfolio = self.portfolio['ticker'].to_list()
+        available_tickers = [ticker for ticker in self.tickers if ticker not in tickers_in_portfolio]
+
+        tickers_to_buy = []
+
+        for ticker in available_tickers:
             price = last_date_data.loc[ticker, 'close']
-            tickers_in_portfolio = self.portfolio['ticker'].to_list()
-            tickers_to_buy = [ticker for ticker in self.tickers if ticker not in tickers_in_portfolio]
+
+            if self.account / len(available_tickers) < price:
+                continue
+
+            tickers_to_buy.append(ticker)
+
+        for ticker in tickers_to_buy:
+            price = last_date_data.loc[ticker, 'close']
             shares_to_buy = int(self.account / len(tickers_to_buy) / price)
 
             row = pd.DataFrame({'ticker': [ticker], 'price': [price], 'shares_to_buy': [shares_to_buy]})
@@ -42,7 +52,7 @@ class Portfolio():
         shares_available = self.equal_weight[self.equal_weight['shares_to_buy'] > 0]
 
         if not self.portfolio['ticker'].isin([ticker]).any() and shares_available['ticker'].isin([ticker]).any():
-            quantity = self.equal_weight.loc[self.equal_weight['ticker'] == ticker, 'shares_to_buy']
+            quantity = self.equal_weight.loc[self.equal_weight['ticker'] == ticker]['shares_to_buy'].iloc[0]
             self.account -= buy_price * quantity
 
             row = pd.DataFrame({'ticker': [ticker], 
