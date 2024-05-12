@@ -1,20 +1,21 @@
 import boto3 as bt
 from index import Index
-import pandas as pd
 from plot import Plot
 from portfolio import Portfolio
 
 def fetch_index_hist_data(index: object):
-    index.fetch_hist_finan_data(days=4*365, path='./data/sp500.xlsx')
+    index.fetch_hist_prices_data(days=4*365, path='./data/sp500.xlsx')
 
 def testPlot():
     sp500 = Index('sp500')
-    fetch_index_hist_data(sp500)
 
+    sp500.fetch_tickers(sp500.sp500_url)
+    #fetch_index_hist_data(sp500)
+    sp500.read_hist_prices_data(path='./data/sp500.xlsx')
     stocks_dict = sp500.generate_stocks()
 
     plot = Plot()
-    plot.plot(stocks_dict['AMCR'], days=90)
+    plot.plot(stocks_dict['AAPL'], days=90)
 
 def createTable():
     ddb = bt.resource('dynamodb',
@@ -57,12 +58,12 @@ def testPortfolio():
     sp500 = Index('sp500')
 
     sp500.fetch_tickers(sp500.sp500_url)
-    sp500.read_hist_finan_data(path='./data/sp500.xlsx')
-
+    sp500.read_hist_prices_data(path='./data/sp500.xlsx')
     stocks_dict = sp500.generate_stocks()
 
     portfolio = Portfolio(account=10000, tickers=list(stocks_dict.keys()))
     portfolio.calculate_shares_to_buy(sp500.financial_data)
     
     
-testPortfolio()
+#testPortfolio()
+testPlot()

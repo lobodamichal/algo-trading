@@ -19,7 +19,7 @@ class Index():
         self.gics = tickers_df
         self.tickers = tickers_df['Symbol'].unique().tolist()
 
-    def fetch_hist_finan_data(self, days: int, path: str) -> None:
+    def fetch_hist_prices_data(self, days: int) -> None:
         end_date = dt.date.today()
         start_date = pd.to_datetime(end_date) - pd.Timedelta(days=days)
         
@@ -28,14 +28,14 @@ class Index():
         data_df.columns = data_df.columns.str.lower()
         data_df.to_excel(path, index=False)
 
-    def read_hist_finan_data(self, path: str):
+    def read_hist_prices_data(self, path: str):
         data_df = pd.read_excel(path)
         data_df.set_index(['date', 'ticker'], inplace=True)
         data_df.sort_index(inplace=True)
 
         self.financial_data = data_df
 
-    def update_financial_data(self) -> None:
+    def update_prices_data(self) -> None:
         pass
 
     def generate_stocks(self) -> dict:
