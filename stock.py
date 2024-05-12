@@ -45,6 +45,3 @@ class Stock:
         self.B_bands()
         self.ATR()
         self.MACD()
-
-    def update_financial_data(self, financial_data) -> None:
-        self.financial_data = financial_data
