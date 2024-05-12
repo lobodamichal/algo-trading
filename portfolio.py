@@ -5,7 +5,7 @@ class Portfolio():
         self.account = account
         self.tickers = tickers
 
-        self.equal_weight = pd.DataFrame(columns=['ticker', 'price','shares_to_buy'])
+        self.share_to_buy = pd.DataFrame(columns=['ticker', 'price','shares_to_buy'])
 
         self.portfolio = pd.DataFrame(columns=[
                 'ticker', 
@@ -23,36 +23,32 @@ class Portfolio():
                 'sell_date'
             ])
         
-    def calculate_equal_weight(self, hist_data:pd.DataFrame):
-        self.equal_weight = pd.DataFrame(columns=['ticker', 'price','shares_to_buy'])
+    def calculate_shares_to_buy(self, hist_data:pd.DataFrame):
+        self.share_to_buy = pd.DataFrame(columns=['ticker', 'price','shares_to_buy'])
+
         last_date = hist_data.index.levels[0][-1]
-        last_date_data = hist_data.xs(last_date)
+        last_date_df = hist_data.loc[(last_date, slice(None)), :]
+        #ALTERNATIVE
+        #last_date_df = hist_data.xs(last_date)
 
         tickers_in_portfolio = self.portfolio['ticker'].to_list()
         available_tickers = [ticker for ticker in self.tickers if ticker not in tickers_in_portfolio]
 
-        tickers_to_buy = []
+        last_date_df = last_date_df[last_date_df.index.get_level_values('ticker').isin(available_tickers)]
+        last_date_df.sort_values(by=['close'], ascending=False, inplace=True)
 
+        
+
+        '''
         for ticker in available_tickers:
-            price = last_date_data.loc[ticker, 'close']
-
-            if self.account / len(available_tickers) < price:
-                continue
-
-            tickers_to_buy.append(ticker)
-
-        for ticker in tickers_to_buy:
-            price = last_date_data.loc[ticker, 'close']
-            shares_to_buy = int(self.account / len(tickers_to_buy) / price)
-
             row = pd.DataFrame({'ticker': [ticker], 'price': [price], 'shares_to_buy': [shares_to_buy]})
-            self.equal_weight = pd.concat([self.equal_weight, row], ignore_index=True)
-
+            self.share_to_buy = pd.concat([self.share_to_buy, row], ignore_index=True)
+        '''
     def buy_stock(self, ticker:str, buy_price:float, buy_date:str):
-        shares_available = self.equal_weight[self.equal_weight['shares_to_buy'] > 0]
+        shares_available = self.share_to_buy[self.share_to_buy['shares_to_buy'] > 0]
 
         if not self.portfolio['ticker'].isin([ticker]).any() and shares_available['ticker'].isin([ticker]).any():
-            quantity = self.equal_weight.loc[self.equal_weight['ticker'] == ticker]['shares_to_buy'].iloc[0]
+            quantity = self.share_to_buy.loc[self.share_to_buy['ticker'] == ticker]['shares_to_buy'].iloc[0]
             self.account -= buy_price * quantity
 
             row = pd.DataFrame({'ticker': [ticker], 
@@ -71,6 +67,6 @@ class Portfolio():
 
             self.account += sell_price * quantity
 
-            row = self.portfolio.loc[index].to_frame().T
+            row = self.portfolio.loc[index].to_frame()
             self.history = pd.concat([self.history, row], ignore_index=True)
             self.portfolio.drop(index, inplace=True)
