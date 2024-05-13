@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-from stock import Stock
+from dataTypes import Stock
 
 class Plot():
 

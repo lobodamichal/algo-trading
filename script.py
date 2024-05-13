@@ -1,17 +1,13 @@
-import boto3 as bt
-from index import Index
+from dataTypes import Index
 from plot import Plot
 from portfolio import Portfolio
-
-def fetch_index_hist_data(index: object):
-    index.fetch_hist_prices_data(days=4*365, path='./data/sp500.xlsx')
 
 def testPlot():
     sp500 = Index('sp500')
 
     sp500.fetch_tickers(sp500.sp500_url)
-    #fetch_index_hist_data(sp500)
-    sp500.read_hist_prices_data(path='./data/sp500.xlsx')
+    #sp500.fetch_hist_financial_data(days=4*365, path='./data/sp500.xlsx')
+    sp500.read_hist_financial_data(path='./data/sp500.xlsx')
     stocks_dict = sp500.generate_stocks()
 
     plot = Plot()
@@ -58,7 +54,8 @@ def testPortfolio():
     sp500 = Index('sp500')
 
     sp500.fetch_tickers(sp500.sp500_url)
-    sp500.read_hist_prices_data(path='./data/sp500.xlsx')
+    #sp500.fetch_hist_financial_data(days=4*365, path='./data/sp500.xlsx')
+    sp500.read_hist_financial_data(path='./data/sp500.xlsx')
     stocks_dict = sp500.generate_stocks()
 
     portfolio = Portfolio(account=10000, tickers=list(stocks_dict.keys()))
