@@ -10,6 +10,7 @@ class Index():
         self.tickers = []
         self.gics: pd.DataFrame
         self.financial_data: pd.DataFrame
+        self.stocks = dict
 
         self.sp500_url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies' 
 
@@ -21,25 +22,38 @@ class Index():
         self.tickers = tickers_df['Symbol'].unique().tolist()
 
     def fetch_hist_financial_data(self, days: int, path: str) -> None:
-        end_date = dt.date.today()
-        start_date = pd.to_datetime(end_date) - pd.Timedelta(days=days)
+        #end_date = dt.date.today()
+        end_date = dt.date(2024, 5, 5)
+        start_date = end_date - pd.Timedelta(days=days)
         
-        data_df = yf.download(self.tickers, start=start_date, end=end_date).stack(future_stack=True)
+        data_df = yf.download(self.tickers, start=start_date, end=end_date, rounding=True).stack(future_stack=True)
+        
         data_df.reset_index(inplace=True)
         data_df.columns = data_df.columns.str.lower()
-        data_df.to_excel(path, index=False)
+        data_df.to_csv(path, index=False)
+
+    def update_financial_data(self, path: str) -> None:
+        start_date = pd.to_datetime(self.financial_data.index.levels[0][-1]) + pd.Timedelta(days=1)
+        end_date = dt.date.today()
+
+        data_df = yf.download(self.tickers, start=start_date, end=end_date, rounding=True).stack(future_stack=True)
+        data_df.reset_index(inplace=True)
+        data_df.columns = data_df.columns.str.lower()
+
+        if not data_df.empty:
+            data_df.set_index(['date', 'ticker'], inplace=True)
+            data_df.sort_index(inplace=True)
+            self.financial_data = pd.concat([self.financial_data, data_df])
+            self.financial_data.to_csv(path)
 
     def read_hist_financial_data(self, path: str):
-        data_df = pd.read_excel(path)
+        data_df = pd.read_csv(path)
         data_df.set_index(['date', 'ticker'], inplace=True)
         data_df.sort_index(inplace=True)
 
         self.financial_data = data_df
 
-    def update_prices_data(self) -> None:
-        pass
-
-    def generate_stocks(self) -> dict:
+    def generate_stocks(self):
         stocks_dict = {}
         
         for ticker in self.tickers:
@@ -51,7 +65,11 @@ class Index():
             stocks_dict[ticker] = Stock(ticker, stock_financial_data_df, stock_gics_dict[0])
             stocks_dict[ticker].compute_indicators()
 
-        return stocks_dict
+        self.stocks = stocks_dict
+
+    def update_stocks(self):
+        ################################################################
+        pass
     
 class Stock:
     def __init__(self, ticker, history_df, gics_df):
