@@ -23,6 +23,9 @@ class Portfolio():
                 'sell_date'
             ])
         
+    def tickers_in_portfolio(self) -> list:
+        return self.portfolio['ticker'].to_list()
+        
     def calculate_shares_to_buy(self, hist_data:pd.DataFrame):
         self.share_to_buy = pd.DataFrame(columns=['ticker', 'price','shares_to_buy'])
 
