@@ -10,8 +10,8 @@ class Index():
         self.financial_data: pd.DataFrame
         self.stocks = dict
 
-    def send_index_data(self) -> dict:
-        return {'financial_data': self.financial_data, 'tickers': self.tickers}
+    def send_index_data(self, fin_data: pd.DataFrame, tickers: list) -> dict:
+        return {'financial_data': fin_data, 'tickers': tickers}
     
     def scrape_gics(self) -> None:
         gics_dict = {}

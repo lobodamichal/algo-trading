@@ -7,6 +7,11 @@ from portfolio import Portfolio
 # new script needed
 ################################################################
 
+def testIndex():
+    sp500 = Index('sp500')
+    sp500.scrape_gics()
+    print(sp500.gics)
+
 '''
 def testPlot():
     sp500 = Index('sp500')
@@ -44,4 +49,5 @@ def testUpload():
 #testPlot()
 testUpload()
 '''
+testIndex()
 
