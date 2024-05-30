@@ -3,7 +3,7 @@ import datetime as dt
 import pandas as pd
 import yfinance as yf
 
-def initialize_DB_resource():
+def initialize_table():
     dynamodb = bt.resource('dynamodb',
                         aws_access_key_id='dummy',
                         aws_secret_access_key='dummy',
@@ -12,8 +12,8 @@ def initialize_DB_resource():
     
     return dynamodb
 
-def create_financial_data_table():
-    dynamodb = initialize_DB_resource()
+def create_financial_data_table() -> None:
+    dynamodb = initialize_table()
 
     table_creation_response = dynamodb.create_table(
         TableName='financial_data',
@@ -45,7 +45,7 @@ def create_financial_data_table():
 
     print(table_creation_response)
 
-def download_financial_data(hist_fin_data: pd.DataFrame, tickers: list):
+def download_fin_data(hist_fin_data: pd.DataFrame, tickers: list) -> None:
     if not hist_fin_data.empty:
         start_date = pd.to_datetime(hist_fin_data.index.levels[0][-1]) + pd.Timedelta(days=1)
     else:
@@ -58,11 +58,11 @@ def download_financial_data(hist_fin_data: pd.DataFrame, tickers: list):
 
     return fin_data
 
-def upload_financial_data(fin_data: pd.DataFrame):
+def write_fin_data(fin_data: pd.DataFrame) -> None:
     if not fin_data.empty:
         fin_data_records = fin_data.to_dict(orient='records')
 
-        dynamodb = initialize_DB_resource()
+        dynamodb = initialize_table()
         fin_data_table = dynamodb.Table('financial_data')
 
         with fin_data_table.batch_writer() as batch:
@@ -78,3 +78,8 @@ def upload_financial_data(fin_data: pd.DataFrame):
                     'volume': int(record['volume']),
                 }
                 batch.put_item(Item=item)
+
+def send_fin_data(fin_data: pd.DataFrame) -> pd.DataFrame:
+    fin_data.set_index(['date', 'ticker'], inplace=True)
+    fin_data.sort_index(inplace=True)
+    return fin_data

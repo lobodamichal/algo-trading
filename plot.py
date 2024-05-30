@@ -11,7 +11,7 @@ class Plot():
 
         financial_data.set_index('date', inplace=True)
 
-        width_candle = .6
+        width_candle = .5
         width_knot = .2
 
         up_candle = financial_data[financial_data.close >= financial_data.open]
