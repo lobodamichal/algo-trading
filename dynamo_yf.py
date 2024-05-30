@@ -3,7 +3,7 @@ import datetime as dt
 import pandas as pd
 import yfinance as yf
 
-def initialize_table():
+def initialize_resource():
     dynamodb = bt.resource('dynamodb',
                         aws_access_key_id='dummy',
                         aws_secret_access_key='dummy',
@@ -13,7 +13,7 @@ def initialize_table():
     return dynamodb
 
 def create_financial_data_table() -> None:
-    dynamodb = initialize_table()
+    dynamodb = initialize_resource()
 
     table_creation_response = dynamodb.create_table(
         TableName='financial_data',
