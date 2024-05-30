@@ -67,7 +67,7 @@ def write_fin_data(fin_data: pd.DataFrame) -> None:
     if not fin_data.empty:
         fin_data_records = fin_data.to_dict(orient='records')
 
-        dynamodb = initialize_table()
+        dynamodb = initialize_resource()
         fin_data_table = dynamodb.Table('financial_data')
 
         with fin_data_table.batch_writer() as batch:
