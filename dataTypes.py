@@ -13,7 +13,7 @@ class Index():
     def send_index_data(self, fin_data: pd.DataFrame, tickers: list) -> dict:
         return {'financial_data': fin_data, 'tickers': tickers}
     
-    def scrape_gics(self) -> None:
+    def scrape_gics(self) -> dict:
         gics_dict = {}
 
         if self.name == 'sp500':
@@ -32,12 +32,13 @@ class Index():
                     'founded': gics_record['Founded']
                 }
 
-        self.set_tickers_gics(gics_dict)
+        return gics_dict
     
         # this will not work for other indexes than sp500
         # method need to be developed for scraping gics data for different indexes
 
     def set_tickers_gics(self, gics: dict) -> None:
+        gics = self.scrape_gics()
         self.gics = gics
         self.tickers = list(gics.keys())
 
