@@ -1,3 +1,4 @@
+from typing import Callable
 import numpy as np
 import pandas as pd
 import pandas_ta as ta
@@ -37,23 +38,16 @@ class Index():
         # this will not work for other indexes than sp500
         # method need to be developed for scraping gics data for different indexes
 
-    def set_tickers_gics(self, gics: dict) -> None:
-        gics = self.scrape_gics()
+    def set_tickers_and_gics(self, tickers_in_portfolio: Callable[[], list]) -> None:
+        new_gics = self.scrape_gics()
         
         if self.gics:
-            self.gics.update(gics)
-            self.tickers = list(self.gics.keys())
-        else:
-            self.gics = gics
-            self.tickers = list(gics.keys())
+            active_tickers = tickers_in_portfolio()
+            portfolio_gics = {key: self.gics[key] for key in active_tickers if key in self.gics}
+            new_gics.update(portfolio_gics)
 
-    def check_deprecated_tickers(self, tickers_in_portfolio: list) -> None:
-        active_deprecated_tickers = [ ticker for ticker in tickers_in_portfolio if ticker not in self.tickers]
-
-        if active_deprecated_tickers:
-            self.tickers.extend(active_deprecated_tickers)
-
-            # add those stocks to stocks_dict
+        self.gics = new_gics
+        self.tickers = list(self.gics.keys())
 
         # write functionality for checking if some deprecated tickers are in fin_data
         # but not in tickers and not in portfolio, then remove data from fin_data for those tickers
