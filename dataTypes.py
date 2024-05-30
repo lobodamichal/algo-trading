@@ -6,41 +6,74 @@ class Index():
     def __init__(self, name: str):
         self.name = name
         self.tickers = []
-        self.gics: pd.DataFrame
+        self.gics: dict
         self.financial_data: pd.DataFrame
         self.stocks = dict
 
     def send_index_data(self) -> dict:
         return {'financial_data': self.financial_data, 'tickers': self.tickers}
     
-    def scrape_gics(self):
+    def scrape_gics(self) -> None:
+        gics_dict = {}
+
         if self.name == 'sp500':
             sp500_url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
             gics = pd.read_html(sp500_url)[0]
             gics['Symbol'] = gics['Symbol'].str.replace('.', '-')
-            return gics
+            gics_list = gics.to_dict('records')
 
-    def set_tickers_gics(self, gics: pd.DataFrame) -> None:
+            for gics_record in gics_list:
+                gics_dict[gics_record['Symbol']] = {
+                    'security': gics_record['Security'],
+                    'sector': gics_record['GICS Sector'],
+                    'sub-industry': gics_record['GICS Sub-Industry'],
+                    'date_added': gics_record['Date added'],
+                    'cik': gics_record['CIK'],
+                    'founded': gics_record['Founded']
+                }
+
+        self.set_tickers_gics(gics_dict)
+    
+        # this will not work for other indexes than sp500
+        # method need to be developed for scraping gics data for different indexes
+
+    def set_tickers_gics(self, gics: dict) -> None:
         self.gics = gics
-        self.tickers = gics['Symbol'].unique().tolist()
+        self.tickers = list(gics.keys())
 
     def check_deprecated_tickers(self, tickers_in_portfolio: list) -> None:
         active_deprecated_tickers = [ ticker for ticker in tickers_in_portfolio if ticker not in self.tickers]
         self.tickers.extend(active_deprecated_tickers)
 
+    def update_stock_fin_data(self, ticker: str) -> None:
+
+        ################################################################
+        # method for updating financial data in stock objects
+        # and computing indicators after update
+        ################################################################
+
+        stock_fin_data = self.financial_data.loc[(slice(None), ticker), :]
+        pass
+
     def generate_stocks(self) -> None:
         stocks_dict = {}
         
         for ticker in self.tickers:
-            stock_gics_df = self.gics[self.gics['Symbol'] == ticker]
-            stock_gics_dict = stock_gics_df[['Security', 'GICS Sector', 'GICS Sub-Industry',
-                'Date added', 'CIK', 'Founded']].to_dict('records')
-            
-            stock_financial_data_df = self.financial_data.loc[(slice(None), ticker), :]
-            stocks_dict[ticker] = Stock(ticker, stock_financial_data_df, stock_gics_dict[0])
+            stock_gics = self.gics[ticker]
+            #stock_fin_data = self.financial_data.loc[(slice(None), ticker), :]
+            stocks_dict[ticker] = Stock(ticker, stock_fin_data, stock_gics[0])
             stocks_dict[ticker].compute_indicators()
 
         self.stocks = stocks_dict
+
+    def update_stocks(self) -> None:
+
+        ################################################################
+        # method for updating stock objects dictionary
+        # and computing indicators after update
+        ################################################################
+
+        pass
         
     def set_fin_data(self, fin_data: pd.DataFrame) -> None:
         if not fin_data.empty:
@@ -51,19 +84,12 @@ class Index():
                 updated_fin_data = pd.concat([hist_fin_data, fin_data])
                 updated_fin_data.sort_index(inplace=True)
                 self.financial_data = updated_fin_data
-
-    def update_stocks_fin_data(self) -> None:
-        ################################################################
-        # method for updating financial data in stock objects
-        # and computing indicators after update
-        ################################################################
-        pass
     
 class Stock:
-    def __init__(self, ticker, history_df, gics_df):
-        self.ticker: str = ticker
-        self.financial_data: pd.DataFrame = history_df
-        self.gics: pd.DataFrame = gics_df
+    def __init__(self, ticker: str, fin_data: pd.DataFrame, gics: pd.DataFrame):
+        self.ticker = ticker
+        self.financial_data = fin_data
+        self.gics = gics
 
     def GK_vol(self) -> None:
         self.financial_data = self.financial_data.copy()

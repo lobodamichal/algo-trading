@@ -45,9 +45,14 @@ def create_financial_data_table() -> None:
 
     print(table_creation_response)
 
+def last_date_adapter(hist_fin_data: pd.DataFrame):
+    last_date = pd.to_datetime(hist_fin_data.index.levels[0][-1]) + pd.Timedelta(days=1)
+    print('type of adapter return: ', type(last_date))
+    return last_date
+
 def download_fin_data(hist_fin_data: pd.DataFrame, tickers: list) -> None:
     if not hist_fin_data.empty:
-        start_date = pd.to_datetime(hist_fin_data.index.levels[0][-1]) + pd.Timedelta(days=1)
+        start_date = last_date_adapter(hist_fin_data)
     else:
         start_date = dt.date(2016, 1, 1)
 
