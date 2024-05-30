@@ -39,12 +39,48 @@ class Index():
 
     def set_tickers_gics(self, gics: dict) -> None:
         gics = self.scrape_gics()
-        self.gics = gics
-        self.tickers = list(gics.keys())
+        
+        if self.gics:
+            self.gics.update(gics)
+            self.tickers = list(self.gics.keys())
+        else:
+            self.gics = gics
+            self.tickers = list(gics.keys())
 
     def check_deprecated_tickers(self, tickers_in_portfolio: list) -> None:
         active_deprecated_tickers = [ ticker for ticker in tickers_in_portfolio if ticker not in self.tickers]
-        self.tickers.extend(active_deprecated_tickers)
+
+        if active_deprecated_tickers:
+            self.tickers.extend(active_deprecated_tickers)
+
+            # add those stocks to stocks_dict
+
+        # write functionality for checking if some deprecated tickers are in fin_data
+        # but not in tickers and not in portfolio, then remove data from fin_data for those tickers
+
+    def set_fin_data(self, fin_data: pd.DataFrame) -> None:
+        if not fin_data.empty:
+            if self.financial_data.empty:
+                self.financial_data = fin_data
+            else:
+                hist_fin_data = self.financial_data
+                updated_fin_data = pd.concat([hist_fin_data, fin_data])
+                updated_fin_data.sort_index(inplace=True)
+                self.financial_data = updated_fin_data
+
+    def initialize_stocks(self) -> None:
+        stocks_dict = {}
+        
+        for ticker in self.tickers:
+            stock_gics = self.gics[ticker]
+            stock_fin_data = self.financial_data.loc[(slice(None), ticker), :]
+            stocks_dict[ticker] = Stock(ticker, stock_fin_data, stock_gics)
+            stocks_dict[ticker].compute_indicators()
+
+        self.stocks = stocks_dict
+
+    def generate_stock(self, ticker: str):
+        pass
 
     def update_stock_fin_data(self, ticker: str) -> None:
 
@@ -56,17 +92,6 @@ class Index():
         stock_fin_data = self.financial_data.loc[(slice(None), ticker), :]
         pass
 
-    def generate_stocks(self) -> None:
-        stocks_dict = {}
-        
-        for ticker in self.tickers:
-            stock_gics = self.gics[ticker]
-            #stock_fin_data = self.financial_data.loc[(slice(None), ticker), :]
-            stocks_dict[ticker] = Stock(ticker, stock_fin_data, stock_gics[0])
-            stocks_dict[ticker].compute_indicators()
-
-        self.stocks = stocks_dict
-
     def update_stocks(self) -> None:
 
         ################################################################
@@ -76,15 +101,6 @@ class Index():
 
         pass
         
-    def set_fin_data(self, fin_data: pd.DataFrame) -> None:
-        if not fin_data.empty:
-            if self.financial_data.empty:
-                self.financial_data = fin_data
-            else:
-                hist_fin_data = self.financial_data
-                updated_fin_data = pd.concat([hist_fin_data, fin_data])
-                updated_fin_data.sort_index(inplace=True)
-                self.financial_data = updated_fin_data
     
 class Stock:
     def __init__(self, ticker: str, fin_data: pd.DataFrame, gics: pd.DataFrame):
