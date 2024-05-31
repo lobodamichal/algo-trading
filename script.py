@@ -1,7 +1,8 @@
 from dataTypes import Index
-from plot import Plot
 from portfolio import Portfolio
-
+import datetime as dt
+import pandas as pd
+from dynamo_yf import download_fin_data
 
 ################################################################
 # new script needed
@@ -11,6 +12,23 @@ def testIndex():
     sp500 = Index('sp500')
     sp500.scrape_gics()
     print(sp500.gics)
+
+def testWrite():
+    sp500 = Index('sp500')
+    hist_fin_data = pd.DataFrame()
+    tickers = ['AAPL', 'AMZN']
+
+    #create_financial_data_table()
+    download_fin_data(tickers, sp500.initial_date, sp500.last_update)
+
+def testStocks():
+    sp500 = Index('sp500')
+    portfolio = Portfolio(account=10000)
+    sp500.set_tickers_and_gics(portfolio.tickers_in_portfolio)
+
+    sp500.initialize_stock_objects()
+
+    sp500.set_update_date(dt.date(2024, 6, 8))
 
 '''
 def testPlot():
@@ -49,5 +67,5 @@ def testUpload():
 #testPlot()
 testUpload()
 '''
-testIndex()
+testStocks()
 

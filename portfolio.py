@@ -1,9 +1,9 @@
 from matplotlib.style import available
 import pandas as pd
 class Portfolio():
-    def __init__(self, account: float, tickers: list):
+    def __init__(self, account: float):
         self.account = account
-        self.tickers = tickers
+        self.tickers = []
 
         self.share_to_buy = pd.DataFrame(columns=['ticker', 'price','shares_to_buy'])
 
@@ -22,6 +22,9 @@ class Portfolio():
                 'sell_price', 
                 'sell_date'
             ])
+        
+    def set_tickers(self, tickers: list):
+        self.tickers = tickers
         
     def tickers_in_portfolio(self) -> list:
         return self.portfolio['ticker'].to_list()

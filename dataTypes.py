@@ -1,18 +1,55 @@
+from abc import ABC, abstractmethod
 from typing import Callable
+import datetime as dt
 import numpy as np
 import pandas as pd
 import pandas_ta as ta
 
-class Index():
+class Subject(ABC):
+    def __init__(self):
+        self.observers = []
+
+    @abstractmethod
+    def register_observer(self, observer):
+        pass
+
+    @abstractmethod
+    def unregister_observer(self, observer):
+        pass
+
+    @abstractmethod
+    def notify_observer(self):
+        pass
+
+class Observer(ABC):
+    @abstractmethod
+    def update(self, update_date):
+        pass
+
+class Index(Subject):
     def __init__(self, name: str):
+        # \? \? \? \? why is this super here \? \? \? \?
+        super().__init__()
         self.name = name
         self.tickers = []
-        self.gics: dict
-        self.financial_data: pd.DataFrame
-        self.stocks = dict
+        self.gics = {}
+        self.stocks = {}
+        self.initial_date = dt.date(2024, 5, 27)
+        self.last_update = None
 
-    def send_index_data(self, fin_data: pd.DataFrame, tickers: list) -> dict:
-        return {'financial_data': fin_data, 'tickers': tickers}
+    def register_observer(self, observer):
+        self.observers.append(observer)
+
+    def unregister_observer(self, observer):
+        self.observers.remove(observer)
+
+    def notify_observer(self):
+        for observer in self.observers:
+            observer.update(self.last_update)
+
+    def set_update_date(self, last_update_date):
+        self.last_update = last_update_date
+        self.notify_observer()
     
     def scrape_gics(self) -> dict:
         gics_dict = {}
@@ -42,66 +79,54 @@ class Index():
         new_gics = self.scrape_gics()
         
         if self.gics:
-            active_tickers = tickers_in_portfolio()
-            portfolio_gics = {key: self.gics[key] for key in active_tickers if key in self.gics}
+            bought_tickers = tickers_in_portfolio()
+            portfolio_gics = {key: self.gics[key] for key in bought_tickers if key in self.gics}
             new_gics.update(portfolio_gics)
 
         self.gics = new_gics
         self.tickers = list(self.gics.keys())
-
-        # write functionality for checking if some deprecated tickers are in fin_data
-        # but not in tickers and not in portfolio, then remove data from fin_data for those tickers
-
-    def set_fin_data(self, fin_data: pd.DataFrame) -> None:
-        if not fin_data.empty:
-            if self.financial_data.empty:
-                self.financial_data = fin_data
-            else:
-                hist_fin_data = self.financial_data
-                updated_fin_data = pd.concat([hist_fin_data, fin_data])
-                updated_fin_data.sort_index(inplace=True)
-                self.financial_data = updated_fin_data
-
-    def initialize_stocks(self) -> None:
+    
+    def initialize_stock_objects(self) -> None:
         stocks_dict = {}
         
         for ticker in self.tickers:
             stock_gics = self.gics[ticker]
-            stock_fin_data = self.financial_data.loc[(slice(None), ticker), :]
-            stocks_dict[ticker] = Stock(ticker, stock_fin_data, stock_gics)
-            stocks_dict[ticker].compute_indicators()
+            #stock_fin_data = self.financial_data.loc[(slice(None), ticker), :]
+            stock = Stock(ticker, stock_gics, self.name, self.last_update)
+            print(stock)
+            self.register_observer(stock)
+            stocks_dict[ticker] = stock
+            #stocks_dict[ticker].compute_indicators()
 
         self.stocks = stocks_dict
 
-    def generate_stock(self, ticker: str):
-        pass
-
-    def update_stock_fin_data(self, ticker: str) -> None:
-
-        ################################################################
-        # method for updating financial data in stock objects
-        # and computing indicators after update
-        ################################################################
-
-        stock_fin_data = self.financial_data.loc[(slice(None), ticker), :]
-        pass
-
-    def update_stocks(self) -> None:
-
-        ################################################################
-        # method for updating stock objects dictionary
-        # and computing indicators after update
-        ################################################################
-
-        pass
-        
+    ################################################################
+    # write method for checking if any new stock objects need to be created
+    # in case a new ticker is available in index
+    ################################################################
     
-class Stock:
-    def __init__(self, ticker: str, fin_data: pd.DataFrame, gics: pd.DataFrame):
+class Stock(Index, Observer):
+    # \? \? \? \? why I need to pass inherited prop in __init__ \? \? \? \?
+    # \? \? \? \? can I do it differently                       \? \? \? \?
+
+    def __init__(self, ticker: str, gics: dict, index_name: str, last_update):
+        self.index_name = index_name
+        self.last_update = last_update
         self.ticker = ticker
-        self.financial_data = fin_data
+        self.financial_data = pd.DataFrame()
         self.gics = gics
 
+    def update(self, update_date):
+        self.last_update = update_date
+        #print(f'object {self.ticker} last update is {self.last_update, update_date}')
+
+    #def set_financial_data(self) 
+
+    ################################################################
+    # write functionality for checking if some deprecated tickers are in dynamo_db
+    # but not in tickers and not in portfolio, then remove data from dynamo_db for those tickers
+    ################################################################
+    
     def GK_vol(self) -> None:
         self.financial_data = self.financial_data.copy()
         self.financial_data['GK_vol'] = 100 * ((np.log(self.financial_data['high']) - np.log(self.financial_data['low'])) **2) / 2 - (2 * np.log(2) - 1) * ((np.log(self.financial_data['adj close']) - np.log(self.financial_data['open']))**2)

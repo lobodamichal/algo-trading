@@ -1,5 +1,6 @@
 import boto3 as bt
 import datetime as dt
+from decimal import Decimal
 import pandas as pd
 import yfinance as yf
 
@@ -45,23 +46,28 @@ def create_financial_data_table() -> None:
 
     print(table_creation_response)
 
-def last_date_adapter(hist_fin_data: pd.DataFrame):
-    last_date = pd.to_datetime(hist_fin_data.index.levels[0][-1]) + pd.Timedelta(days=1)
-    print('type of adapter return: ', type(last_date))
-    return last_date
+def download_fin_data(tickers: list, initial_date: dt.date, last_update) -> dict:
 
-def download_fin_data(hist_fin_data: pd.DataFrame, tickers: list) -> None:
-    if not hist_fin_data.empty:
-        start_date = last_date_adapter(hist_fin_data)
+    if last_update:
+        start_date = last_update + dt.timedelta(days=1)
     else:
-        start_date = dt.date(2016, 1, 1)
+        start_date = initial_date
 
-    end_date = dt.date.today()
-    fin_data = yf.download(tickers, start=start_date, end=end_date, rounding=True).stack(future_stack=True)
+    today_date = dt.date.today()
+    fin_data = yf.download(tickers, start=start_date, end=today_date, rounding=True).stack(future_stack=True)
     fin_data.reset_index(inplace=True)
     fin_data.columns = fin_data.columns.str.lower()
 
-    return fin_data
+    write_fin_data(fin_data)
+
+    return {
+        'last_update': today_date
+    }
+
+def decimal_adapter(x):
+    if isinstance(x, float):
+        return Decimal(str(x))
+    return x
 
 def write_fin_data(fin_data: pd.DataFrame) -> None:
     if not fin_data.empty:
@@ -75,16 +81,11 @@ def write_fin_data(fin_data: pd.DataFrame) -> None:
                 item = {
                     'ticker': record['ticker'],
                     'date': record['date'].strftime('%Y-%m-%d'),
-                    'open': float(record['open']),
-                    'high': float(record['high']),
-                    'low': float(record['low']),
-                    'close': float(record['close']),
-                    'adj_close': float(record['adj close']),
+                    'open': decimal_adapter(record['open']),
+                    'high': decimal_adapter(record['high']),
+                    'low': decimal_adapter(record['low']),
+                    'close': decimal_adapter(record['close']),
+                    'adj_close': decimal_adapter(record['adj close']),
                     'volume': int(record['volume']),
                 }
                 batch.put_item(Item=item)
-
-def send_fin_data(fin_data: pd.DataFrame) -> pd.DataFrame:
-    fin_data.set_index(['date', 'ticker'], inplace=True)
-    fin_data.sort_index(inplace=True)
-    return fin_data
