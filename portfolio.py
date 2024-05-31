@@ -43,8 +43,6 @@ class Portfolio():
         last_date_df = last_date_df[last_date_df.index.get_level_values('ticker').isin(available_tickers)]
         last_date_df.sort_values(by=['close'], ascending=False, inplace=True)
 
-        
-
         '''
         for ticker in available_tickers:
             row = pd.DataFrame({'ticker': [ticker], 'price': [price], 'shares_to_buy': [shares_to_buy]})

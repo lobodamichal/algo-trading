@@ -93,7 +93,6 @@ class Index(Subject):
             stock_gics = self.gics[ticker]
             #stock_fin_data = self.financial_data.loc[(slice(None), ticker), :]
             stock = Stock(ticker, stock_gics, self.name, self.last_update)
-            print(stock)
             self.register_observer(stock)
             stocks_dict[ticker] = stock
             #stocks_dict[ticker].compute_indicators()
@@ -108,6 +107,7 @@ class Index(Subject):
 class Stock(Index, Observer):
     # \? \? \? \? why I need to pass inherited prop in __init__ \? \? \? \?
     # \? \? \? \? can I do it differently                       \? \? \? \?
+    # \? \? \? \? how to inherit prop last_update and name      \? \? \? \?
 
     def __init__(self, ticker: str, gics: dict, index_name: str, last_update):
         self.index_name = index_name
@@ -118,7 +118,6 @@ class Stock(Index, Observer):
 
     def update(self, update_date):
         self.last_update = update_date
-        #print(f'object {self.ticker} last update is {self.last_update, update_date}')
 
     #def set_financial_data(self) 
 
