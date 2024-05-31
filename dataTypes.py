@@ -1,6 +1,7 @@
+import datetime as dt
 from abc import ABC, abstractmethod
 from typing import Callable
-import datetime as dt
+
 import numpy as np
 import pandas as pd
 import pandas_ta as ta
@@ -23,12 +24,11 @@ class Subject(ABC):
 
 class Observer(ABC):
     @abstractmethod
-    def update(self, update_date):
+    def update(self, value):
         pass
 
 class Index(Subject):
     def __init__(self, name: str):
-        # \? \? \? \? why is this super here \? \? \? \?
         super().__init__()
         self.name = name
         self.tickers = []
@@ -85,30 +85,19 @@ class Index(Subject):
 
         self.gics = new_gics
         self.tickers = list(self.gics.keys())
-    
-    def initialize_stock_objects(self) -> None:
-        stocks_dict = {}
+
+    def create_stock_objects(self):
+        new_tickers = [ticker for ticker in self.tickers if ticker not in self.stocks]
         
-        for ticker in self.tickers:
+        for ticker in new_tickers:
             stock_gics = self.gics[ticker]
-            #stock_fin_data = self.financial_data.loc[(slice(None), ticker), :]
             stock = Stock(ticker, stock_gics, self.name, self.last_update)
             self.register_observer(stock)
-            stocks_dict[ticker] = stock
-            #stocks_dict[ticker].compute_indicators()
-
-        self.stocks = stocks_dict
-
-    ################################################################
-    # write method for checking if any new stock objects need to be created
-    # in case a new ticker is available in index
-    ################################################################
+            self.stocks[ticker] = stock
     
-class Stock(Index, Observer):
-    # \? \? \? \? why I need to pass inherited prop in __init__ \? \? \? \?
-    # \? \? \? \? can I do it differently                       \? \? \? \?
-    # \? \? \? \? how to inherit prop last_update and name      \? \? \? \?
-
+class Stock(Observer):
+    # \? \? \? \? how to inherit index_name and last_update from Index class \? \? \? \?
+    # \? \? \? \? is it necessary to pass props as args                      \? \? \? \?
     def __init__(self, ticker: str, gics: dict, index_name: str, last_update):
         self.index_name = index_name
         self.last_update = last_update
@@ -116,10 +105,13 @@ class Stock(Index, Observer):
         self.financial_data = pd.DataFrame()
         self.gics = gics
 
-    def update(self, update_date):
-        self.last_update = update_date
+    def update(self, value):
+        self.last_update = value
 
-    #def set_financial_data(self) 
+    def set_financial_data(self, query_fin_data: Callable[[str, dt.date, dt.date | None], pd.DataFrame]):
+        fin_data = query_fin_data(self.ticker, self.last_update, None)
+        self.financial_data = pd.concat([self.financial_data, fin_data], axis=0)
+        self.financial_data.sort_index(inplace=True)
 
     ################################################################
     # write functionality for checking if some deprecated tickers are in dynamo_db

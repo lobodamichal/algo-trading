@@ -2,7 +2,7 @@ from dataTypes import Index
 from portfolio import Portfolio
 import datetime as dt
 import pandas as pd
-from dynamo_yf import download_fin_data
+from dynamo_yf import download_fin_data, query_fin_data_table
 
 ################################################################
 # new script needed
@@ -25,11 +25,16 @@ def testStocks():
     sp500 = Index('sp500')
     portfolio = Portfolio(account=10000)
     sp500.set_tickers_and_gics(portfolio.tickers_in_portfolio)
+    sp500.tickers = ['AAPL', 'AMZN']
 
-    sp500.initialize_stock_objects()
+    sp500.create_stock_objects()
+    sp500.set_update_date(dt.date(2024, 5, 30))
 
-    sp500.set_update_date(dt.date(2024, 6, 8))
+    #### execute this once a day
+    #update_date = download_fin_data(sp500.tickers, sp500.initial_date, sp500.last_update)
 
+    sp500.stocks['AAPL'].set_financial_data(query_fin_data_table)
+    print(sp500.stocks['AAPL'].financial_data)
 '''
 def testPlot():
     sp500 = Index('sp500')

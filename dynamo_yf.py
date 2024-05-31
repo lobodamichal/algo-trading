@@ -1,6 +1,8 @@
-import boto3 as bt
 import datetime as dt
 from decimal import Decimal
+
+import boto3 as bt
+from boto3.dynamodb.conditions import Key
 import pandas as pd
 import yfinance as yf
 
@@ -46,7 +48,19 @@ def create_financial_data_table() -> None:
 
     print(table_creation_response)
 
-def download_fin_data(tickers: list, initial_date: dt.date, last_update) -> dict:
+def decimal_adapter(value):
+    if isinstance(value, float):
+        return Decimal(str(value))
+    return value
+
+def fin_data_df_adapter(table: dict) -> pd.DataFrame:
+    df = pd.DataFrame(table)
+    df['date'] = pd.to_datetime(df['date'])
+    df.set_index(['date', 'ticker'], inplace=True)
+    df.sort_index(inplace=True)
+    return df
+
+def download_fin_data(tickers: list, initial_date: dt.date, last_update: dt.date | None) -> dt.date:
 
     if last_update:
         start_date = last_update + dt.timedelta(days=1)
@@ -60,19 +74,13 @@ def download_fin_data(tickers: list, initial_date: dt.date, last_update) -> dict
 
     write_fin_data(fin_data)
 
-    return {
-        'last_update': today_date
-    }
-
-def decimal_adapter(x):
-    if isinstance(x, float):
-        return Decimal(str(x))
-    return x
+    return today_date
 
 def write_fin_data(fin_data: pd.DataFrame) -> None:
     if not fin_data.empty:
         fin_data_records = fin_data.to_dict(orient='records')
 
+        # \? \? \? \? should I initialize dynamo resource every time \? \? \? \? 
         dynamodb = initialize_resource()
         fin_data_table = dynamodb.Table('financial_data')
 
@@ -89,3 +97,17 @@ def write_fin_data(fin_data: pd.DataFrame) -> None:
                     'volume': int(record['volume']),
                 }
                 batch.put_item(Item=item)
+
+def query_fin_data_table(ticker: str, start_date: dt.date, end_date: dt.date | None ) -> pd.DataFrame:
+    if not end_date:
+        end_date = dt.date.today()
+    
+    dynamodb = initialize_resource()
+    financial_data_table = dynamodb.Table('financial_data')
+
+    response = financial_data_table.query(
+        KeyConditionExpression=Key('ticker').eq(ticker) & Key('date').between(start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
+    )
+    
+    return fin_data_df_adapter(response['Items'])
+    
